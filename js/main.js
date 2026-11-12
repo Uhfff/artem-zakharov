@@ -38,20 +38,6 @@
     });
   }
 
-  /* ---------- finale letters ---------- */
-  const fin = $('fin'), finale = $('finale'), finChars = [];
-  [...'Artem Zakharov'].forEach(c => {
-    const s = document.createElement('span'); s.setAttribute('aria-hidden', 'true');
-    if (c === ' ') s.className = 'gap'; else { s.textContent = c; finChars.push({ el: s, cur: 0.06 }); }
-    fin.appendChild(s);
-  });
-  function fitFin() {
-    fin.style.fontSize = '100px';
-    let w = 0; [...fin.children].forEach(c => { w += c.offsetWidth; });
-    fin.style.fontSize = (100 * fin.clientWidth / Math.max(1, w) * 0.992).toFixed(2) + 'px';
-    finChars.forEach(c => { const r = c.el.getBoundingClientRect(); c.cx = r.left + r.width / 2; });
-  }
-
   /* ---------- statement: words light up as you read down ---------- */
   const st = $('statement'), words = [];
   (function split(node, hl) {
@@ -87,7 +73,7 @@
     const vs = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }';
     const fs = `
 precision highp float;
-uniform vec2 res; uniform float t; uniform vec2 m; uniform float mon; uniform float intro; uniform float sc; uniform float dim; uniform vec3 rip[3];
+uniform vec2 res; uniform float t; uniform vec2 m; uniform float mon; uniform float intro; uniform float sc; uniform float dim; uniform vec3 rip[3]; uniform float flood; uniform float settle; uniform float tide;
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){
   vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
@@ -144,6 +130,30 @@ void main(){
   float vig = smoothstep(1.30, 0.20, length((uv - 0.5) * vec2(1.0, 1.15)));
   col *= mix(0.55, 1.0, vig);
   col *= intro * dim;
+
+  // loading: sapphire liquid floods the screen from below, its level is the progress.
+  // when it has covered everything it calms down and simply becomes this background.
+  if (settle < 0.999) {
+    float n1 = fbm(p0 * 1.9 + vec2(0.0, t * 0.22)), n2 = fbm(p0 * 5.5 - vec2(t * 0.15, t * 0.30));
+    float h = uv.y + (n1 - 0.5) * 0.62 + (n2 - 0.5) * 0.16;
+    float lvl = flood * 1.55 - 0.30;
+    float inside = smoothstep(0.0, 0.010, lvl - h);
+    float rim = smoothstep(0.050, 0.0, abs(lvl - h)) * (1.0 - settle);
+    vec3 liquid = mix(deep * 0.55, lit, sheen * (0.55 + 0.45 * depth)) + pearl * edge * 0.55;
+    liquid = mix(liquid, deep * 0.9, smoothstep(0.0, 0.5, lvl - h) * 0.35);
+    vec3 wet = mix(liquid, col, settle);
+    col = mix(vec3(0.010, 0.012, 0.026), wet, inside) + pearl * rim * 0.85 * inside + lit * rim * 0.35;
+  }
+  // ending: the same liquid comes back up from the bottom edge as the page runs out
+  if (tide > 0.001) {
+    float n1 = fbm(p0 * 1.9 + vec2(0.0, t * 0.22)), n2 = fbm(p0 * 5.5 - vec2(t * 0.15, t * 0.30));
+    float h = uv.y + (n1 - 0.5) * 0.46 + (n2 - 0.5) * 0.12;
+    float lvl = tide * 0.60 - 0.24;
+    float inside = smoothstep(0.0, 0.012, lvl - h);
+    float rim = smoothstep(0.045, 0.0, abs(lvl - h));
+    vec3 liquid = mix(deep * 0.45, lit * 0.72, sheen * (0.5 + 0.5 * depth)) + pearl * edge * 0.30;
+    col = mix(col, liquid, inside) + (pearl * 0.7 + lit * 0.3) * rim * inside;
+  }
   col += (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.022;
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -156,7 +166,7 @@ void main(){
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       const u = n => gl.getUniformLocation(pr, n);
-      U = { res: u('res'), t: u('t'), m: u('m'), mon: u('mon'), intro: u('intro'), sc: u('sc'), dim: u('dim'), rip: [u('rip[0]'), u('rip[1]'), u('rip[2]')] };
+      U = { res: u('res'), t: u('t'), m: u('m'), mon: u('mon'), intro: u('intro'), sc: u('sc'), dim: u('dim'), rip: [u('rip[0]'), u('rip[1]'), u('rip[2]')], flood: u('flood'), settle: u('settle'), tide: u('tide') };
     }
   }
 
@@ -167,11 +177,11 @@ void main(){
     canvas.width = Math.max(2, Math.round(vw * scale));
     canvas.height = Math.max(2, Math.round(vh * scale));
     if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
-    measure(); fitFin();
+    measure();
   }
   addEventListener('resize', resize);
   tall.addEventListener('change', measure);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); fitFin(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
 
   /* ---------- scroll-driven pieces ---------- */
   const passage = $('passage'), about = $('about'), work = $('work'), also = $('also');
@@ -210,38 +220,34 @@ void main(){
     });
   });
 
-  /* curtain: real progress (type, 3D scenes, a minimum beat), an odometer, then eight slats lift */
-  const pre = $('pre'); let started = reduce, fontsOk = false;
+  /* loading: real progress (type, 3D scenes, a minimum beat) drives the level of the liquid in the background shader */
+  const pre = $('pre'), tBoot = performance.now(); let started = reduce, fontsOk = false, floodV = reduce ? 2 : 0, settleV = reduce ? 1 : 0;
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontsOk = true; }); else fontsOk = true;
   if (reduce) { pre.remove(); document.body.classList.add('ready'); }
   else {
-    const strips = [...pre.querySelectorAll('.strip')], num = pre.querySelector('.pre-num'), bar = $('preB'), label = $('preS');
-    const preT = performance.now(); let shown = 0, lastInt = -1;
-    (function curtain(now) {
-      const age = now - preT, late = age > 4500;
-      const goal = 20 * Math.min(1, age / 900) + (fontsOk || late ? 40 : 0) + (window.__scenesReady || late ? 40 : 0);
-      shown = Math.min(goal, shown + Math.max(0.35, (goal - shown) * 0.07));
-      const n = Math.floor(shown);
-      if (n !== lastInt) {
-        lastInt = n;
-        strips[0].style.transform = 'translateY(' + (n >= 100 ? -50 : 0) + '%)';
-        strips[1].style.transform = 'translateY(' + (-(Math.floor(n / 10) % 10) * 10) + '%)';
-        strips[2].style.transform = 'translateY(' + (-(n % 10) * 10) + '%)';
-        num.classList.toggle('hundred', n >= 100);
-        label.textContent = n < 45 ? 'Loading type' : n < 90 ? 'Building scenes' : 'Ready';
+    const label = $('preS'); let shown = 0, phase = 0, tPhase = 0;
+    (function loading(now) {
+      const age = now - tBoot, late = age > 4500;
+      if (phase === 0) {
+        const goal = 20 * Math.min(1, age / 1100) + (fontsOk || late ? 40 : 0) + (window.__scenesReady || late ? 40 : 0);
+        shown = Math.min(goal, shown + Math.max(0.3, (goal - shown) * 0.05));
+        floodV = shown / 100 * 0.86;
+        label.textContent = shown < 45 ? 'Loading type' : shown < 92 ? 'Building scenes' : 'Ready';
+        if (shown >= 100) { phase = 1; tPhase = now; pre.classList.add('out'); }
+      } else if (phase === 1) {                      // the last surge covers the screen
+        const k = Math.min(1, (now - tPhase) / 750);
+        floodV = 0.86 + (1 - Math.pow(1 - k, 3)) * 0.50;
+        if (k >= 1) { phase = 2; tPhase = now + 220; started = true; document.body.classList.add('ready'); measure(); }
+      } else {                                       // the liquid calms into the background, the name rises
+        const k = Math.min(1, Math.max(0, (now - tPhase) / 1700));
+        settleV = k * k * (3 - 2 * k);
+        if (k >= 1) { settleV = 1; pre.remove(); return; }
       }
-      bar.style.transform = 'scaleX(' + (shown / 100).toFixed(4) + ')';
-      if (n >= 100) {
-        setTimeout(() => pre.classList.add('out'), 420);
-        setTimeout(() => { pre.classList.add('lift'); started = true; document.body.classList.add('ready'); measure(); }, 1000);
-        setTimeout(() => pre.remove(), 2700);
-        return;
-      }
-      requestAnimationFrame(curtain);
-    })(preT);
+      requestAnimationFrame(loading);
+    })(tBoot);
   }
 
-  let t0 = performance.now();
+  let t0 = performance.now(), tideV = 0;
   let last = t0, slow = 0, sm = scrollY, vel = 0, dim = 1;
   function frame(now) {
     if (lenis) lenis.raf(now);
@@ -260,13 +266,17 @@ void main(){
 
     if (U) {
       gl.uniform2f(U.res, canvas.width, canvas.height);
-      gl.uniform1f(U.t, reduce ? 12.0 : time + 12.0);
+      gl.uniform1f(U.t, reduce ? 12.0 : (now - tBoot) / 1000 + 12.0);
       gl.uniform2f(U.m, ptr.x, 1 - ptr.y);
       gl.uniform1f(U.mon, reduce ? 0 : ptr.on);
-      gl.uniform1f(U.intro, Math.min(1, el / 1600));
+      gl.uniform1f(U.intro, 1);
+      gl.uniform1f(U.flood, floodV); gl.uniform1f(U.settle, settleV);
+      const left = document.documentElement.scrollHeight - vh - sm;
+      tideV = lerp(tideV, reduce ? 0 : clamp(1 - left / (vh * 0.95), 0, 1), 0.08);
+      gl.uniform1f(U.tide, tideV);
       gl.uniform1f(U.sc, reduce ? 0 : sm / vh);
       gl.uniform1f(U.dim, dim);
-      shT = reduce ? 12.0 : time + 12.0;
+      shT = reduce ? 12.0 : (now - tBoot) / 1000 + 12.0;
       for (let i = 0; i < 3; i++) gl.uniform3f(U.rip[i], rips[i][0], rips[i][1], rips[i][2]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (dt > 0.034 && el > 1500 && scale > 0.5) { if (++slow > 40) { slow = 0; scale *= 0.8; canvas.width = Math.round(vw * scale); canvas.height = Math.round(vh * scale); gl.viewport(0, 0, canvas.width, canvas.height); } }
@@ -301,17 +311,6 @@ void main(){
       bands[2].style.transform = 'translate3d(' + (-18 - p * 40) + '%,0,0) skewX(' + (-skew) + 'deg)';
     }
 
-    // finale: the name grows letter by letter as the page runs out
-    if (!reduce && near(finale)) {
-      const r = finale.getBoundingClientRect(), p = clamp((vh - r.top) / Math.max(1, r.height), 0, 1);
-      for (let i = 0; i < finChars.length; i++) {
-        const c = finChars[i], local = clamp(p * 1.9 - 0.25 - i * 0.05, 0, 1);
-        const dx = ptr.px - c.cx;
-        const lift = Math.exp(-(dx * dx) / (2 * Math.pow(Math.max(90, vw * 0.09), 2))) * ptr.on * (ptr.py > r.top ? 0.16 : 0);
-        c.cur = lerp(c.cur, 0.06 + 0.94 * (1 - Math.pow(1 - local, 3)) + lift * local, k);
-        c.el.style.transform = 'scaleY(' + c.cur.toFixed(4) + ')';
-      }
-    }
     // about: fill the statement word by word
     if (near(about)) {
       const r = st.getBoundingClientRect();
