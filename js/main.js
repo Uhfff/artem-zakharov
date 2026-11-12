@@ -38,6 +38,19 @@
     });
   }
 
+  /* ---------- finale letters ---------- */
+  const fin = $('fin'), finale = $('finale'), finChars = [];
+  [...'Artem Zakharov'].forEach(c => {
+    const s = document.createElement('span'); s.setAttribute('aria-hidden', 'true');
+    if (c === ' ') s.className = 'gap'; else { s.textContent = c; finChars.push({ el: s, cur: 0.06 }); }
+    fin.appendChild(s);
+  });
+  function fitFin() {
+    fin.style.fontSize = '100px';
+    let w = 0; [...fin.children].forEach(c => { w += c.offsetWidth; });
+    fin.style.fontSize = (100 * fin.clientWidth / Math.max(1, w) * 0.992).toFixed(2) + 'px';
+  }
+
   /* ---------- statement: words light up as you read down ---------- */
   const st = $('statement'), words = [];
   (function split(node, hl) {
@@ -153,11 +166,11 @@ void main(){
     canvas.width = Math.max(2, Math.round(vw * scale));
     canvas.height = Math.max(2, Math.round(vh * scale));
     if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
-    measure();
+    measure(); fitFin();
   }
   addEventListener('resize', resize);
   tall.addEventListener('change', measure);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); fitFin(); });
 
   /* ---------- scroll-driven pieces ---------- */
   const passage = $('passage'), about = $('about'), work = $('work'), also = $('also');
@@ -268,6 +281,17 @@ void main(){
       bands[2].style.transform = 'translate3d(' + (-18 - p * 40) + '%,0,0) skewX(' + (-skew) + 'deg)';
     }
 
+    // finale: the name grows letter by letter as the page runs out
+    if (!reduce && near(finale)) {
+      const r = finale.getBoundingClientRect(), p = clamp((vh - r.top) / Math.max(1, r.height), 0, 1);
+      for (let i = 0; i < finChars.length; i++) {
+        const c = finChars[i], local = clamp(p * 1.9 - 0.25 - i * 0.05, 0, 1);
+        const dx = ptr.px - (c.el.getBoundingClientRect().left + c.el.offsetWidth / 2);
+        const lift = Math.exp(-(dx * dx) / (2 * Math.pow(Math.max(90, vw * 0.09), 2))) * ptr.on * (ptr.py > r.top ? 0.16 : 0);
+        c.cur = lerp(c.cur, 0.06 + 0.94 * (1 - Math.pow(1 - local, 3)) + lift * local, k);
+        c.el.style.transform = 'scaleY(' + c.cur.toFixed(4) + ')';
+      }
+    }
     // about: fill the statement word by word
     if (near(about)) {
       const r = st.getBoundingClientRect();
