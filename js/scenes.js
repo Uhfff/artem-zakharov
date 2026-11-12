@@ -5,7 +5,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const canvas = document.getElementById('gl3');
 const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.setClearColor(0x000000, 0);
@@ -80,7 +80,7 @@ function globe() {
 /* 3. a slow liquid form: the deck is made of shaders and depth, so is its portrait */
 function blob() {
   const b = base();
-  const geo = new THREE.SphereGeometry(1.55, 150, 110), P = geo.attributes.position, B = P.array.slice(), n = P.count;
+  const geo = new THREE.SphereGeometry(1.55, 104, 76), P = geo.attributes.position, B = P.array.slice(), n = P.count;
   const mat = new THREE.MeshPhysicalMaterial({ color: 0x0a1a78, metalness: 0.9, roughness: 0.10, clearcoat: 1, clearcoatRoughness: 0.04, iridescence: 0.22, iridescenceIOR: 1.3, iridescenceThicknessRange: [120, 260], envMapIntensity: 1.35 });
   b.g.add(new THREE.Mesh(geo, mat));
   let tick = 0;
@@ -120,10 +120,14 @@ function resize() { W = innerWidth; H = innerHeight; renderer.setSize(W, H, fals
 addEventListener('resize', resize); resize();
 addEventListener('pointermove', e => { tmx = e.clientX / W - 0.5; tmy = e.clientY / H - 0.5; }, { passive: true });
 
-const t0 = performance.now();
+const t0 = performance.now(); let idle = false;
 function frame(now) {
   const t = reduce ? 4 : (now - t0) / 1000;
   mx = lerp(mx, tmx, 0.05); my = lerp(my, tmy, 0.05);
+  // nothing on screen: clear once, then do no work at all until a stage comes back
+  const any = stages.some(s => { const r = s.el.getBoundingClientRect(); return r.bottom > 0 && r.top < H; });
+  if (!any) { if (!idle) { renderer.setScissorTest(false); renderer.clear(); idle = true; } requestAnimationFrame(frame); return; }
+  idle = false;
   renderer.setScissorTest(false); renderer.clear(); renderer.setScissorTest(true);
   for (const s of stages) {
     const r = s.el.getBoundingClientRect();
@@ -147,3 +151,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+window.__scenesReady = true;

@@ -9,10 +9,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+<style>html, body, body * { -webkit-user-select: none; user-select: none; }</style>
+<link rel="stylesheet" href="css/style.css?v=5">
 </head>
 <body>
-<div id="pre" aria-hidden="true"><span class="anton" id="preN">0</span></div>
+<div id="pre" aria-hidden="true">
+  <div class="pre-slats"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="pre-top small"><span>Artem Zakharov</span><span id="preS">Loading type</span></div>
+  <div class="pre-num anton"><span class="col"><span class="strip"><b>&nbsp;</b><b>1</b></span></span><span class="col"><span class="strip"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b><b>9</b></span></span><span class="col"><span class="strip"><b>0</b><b>1</b><b>2</b><b>3</b><b>4</b><b>5</b><b>6</b><b>7</b><b>8</b><b>9</b></span></span></div>
+  <div class="pre-bar"><i id="preB"></i></div>
+</div>
 <canvas id="field" aria-hidden="true"></canvas>
 
 <main id="top">
@@ -120,8 +126,8 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" defer></script>
-<script src="js/main.js" defer></script>
+<script src="js/main.js?v=5" defer></script>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
-<script type="module" src="js/scenes.js"></script>
+<script type="module" src="js/scenes.js?v=5"></script>
 </body>
 </html>

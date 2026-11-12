@@ -49,6 +49,7 @@
     fin.style.fontSize = '100px';
     let w = 0; [...fin.children].forEach(c => { w += c.offsetWidth; });
     fin.style.fontSize = (100 * fin.clientWidth / Math.max(1, w) * 0.992).toFixed(2) + 'px';
+    finChars.forEach(c => { const r = c.el.getBoundingClientRect(); c.cx = r.left + r.width / 2; });
   }
 
   /* ---------- statement: words light up as you read down ---------- */
@@ -143,7 +144,7 @@ void main(){
   float vig = smoothstep(1.30, 0.20, length((uv - 0.5) * vec2(1.0, 1.15)));
   col *= mix(0.55, 1.0, vig);
   col *= intro * dim;
-  col += (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.035;
+  col += (hash(gl_FragCoord.xy + fract(t) * 91.7) - 0.5) * 0.022;
   gl_FragColor = vec4(col, 1.0);
 }`;
     const mk = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
@@ -162,7 +163,7 @@ void main(){
   let vw = innerWidth, vh = innerHeight;
   function resize() {
     vw = innerWidth; vh = innerHeight;
-    scale = Math.min(devicePixelRatio || 1, vw < 760 ? 1.25 : 1) * (vw > 1800 ? 0.8 : 1);
+    scale = vw > 1800 ? 0.5 : 0.62;
     canvas.width = Math.max(2, Math.round(vw * scale));
     canvas.height = Math.max(2, Math.round(vh * scale));
     if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
@@ -209,17 +210,36 @@ void main(){
     });
   });
 
-  /* curtain */
-  const pre = $('pre'), preN = $('preN'); let started = reduce, fontsOk = false;
+  /* curtain: real progress (type, 3D scenes, a minimum beat), an odometer, then eight slats lift */
+  const pre = $('pre'); let started = reduce, fontsOk = false;
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontsOk = true; }); else fontsOk = true;
-  const preT = performance.now();
-  function curtain(now) {
-    const k = Math.min(1, (now - preT) / 1150), shown = Math.round((1 - Math.pow(1 - k, 2)) * (fontsOk || now - preT > 3000 ? 100 : 92));
-    preN.textContent = shown;
-    if (shown >= 100) { pre.classList.add('done'); setTimeout(() => { started = true; document.body.classList.add('ready'); measure(); }, 380); setTimeout(() => pre.remove(), 1500); return; }
-    requestAnimationFrame(curtain);
+  if (reduce) { pre.remove(); document.body.classList.add('ready'); }
+  else {
+    const strips = [...pre.querySelectorAll('.strip')], num = pre.querySelector('.pre-num'), bar = $('preB'), label = $('preS');
+    const preT = performance.now(); let shown = 0, lastInt = -1;
+    (function curtain(now) {
+      const age = now - preT, late = age > 4500;
+      const goal = 20 * Math.min(1, age / 900) + (fontsOk || late ? 40 : 0) + (window.__scenesReady || late ? 40 : 0);
+      shown = Math.min(goal, shown + Math.max(0.35, (goal - shown) * 0.07));
+      const n = Math.floor(shown);
+      if (n !== lastInt) {
+        lastInt = n;
+        strips[0].style.transform = 'translateY(' + (n >= 100 ? -50 : 0) + '%)';
+        strips[1].style.transform = 'translateY(' + (-(Math.floor(n / 10) % 10) * 10) + '%)';
+        strips[2].style.transform = 'translateY(' + (-(n % 10) * 10) + '%)';
+        num.classList.toggle('hundred', n >= 100);
+        label.textContent = n < 45 ? 'Loading type' : n < 90 ? 'Building scenes' : 'Ready';
+      }
+      bar.style.transform = 'scaleX(' + (shown / 100).toFixed(4) + ')';
+      if (n >= 100) {
+        setTimeout(() => pre.classList.add('out'), 420);
+        setTimeout(() => { pre.classList.add('lift'); started = true; document.body.classList.add('ready'); measure(); }, 1000);
+        setTimeout(() => pre.remove(), 2700);
+        return;
+      }
+      requestAnimationFrame(curtain);
+    })(preT);
   }
-  if (reduce) { pre.remove(); document.body.classList.add('ready'); } else requestAnimationFrame(curtain);
 
   let t0 = performance.now();
   let last = t0, slow = 0, sm = scrollY, vel = 0, dim = 1;
@@ -286,7 +306,7 @@ void main(){
       const r = finale.getBoundingClientRect(), p = clamp((vh - r.top) / Math.max(1, r.height), 0, 1);
       for (let i = 0; i < finChars.length; i++) {
         const c = finChars[i], local = clamp(p * 1.9 - 0.25 - i * 0.05, 0, 1);
-        const dx = ptr.px - (c.el.getBoundingClientRect().left + c.el.offsetWidth / 2);
+        const dx = ptr.px - c.cx;
         const lift = Math.exp(-(dx * dx) / (2 * Math.pow(Math.max(90, vw * 0.09), 2))) * ptr.on * (ptr.py > r.top ? 0.16 : 0);
         c.cur = lerp(c.cur, 0.06 + 0.94 * (1 - Math.pow(1 - local, 3)) + lift * local, k);
         c.el.style.transform = 'scaleY(' + c.cur.toFixed(4) + ')';

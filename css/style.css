@@ -167,9 +167,28 @@ main, footer { position: relative; z-index: 2; }
 .fin-name .gap { width: 0.16em; }
 
 /* ========== curtain: counts to 100, then lifts ========== */
-#pre { position: fixed; inset: 0; z-index: 50; background: var(--ink); display: flex; align-items: flex-end; padding: 0 var(--gutter) calc(var(--gutter) * 0.4); transition: transform 1000ms cubic-bezier(0.76, 0, 0.24, 1); will-change: transform; }
-#pre span { font-size: min(34vw, 46vh); line-height: 0.82; font-variant-numeric: tabular-nums; }
-#pre.done { transform: translateY(-101%); }
+#pre { position: fixed; inset: 0; z-index: 50; display: grid; grid-template-rows: auto 1fr auto; padding: var(--gutter) var(--gutter) 0; overflow: hidden; }
+.pre-slats { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(8, 1fr); }
+.pre-slats i { background: var(--ink); margin-right: -1px; transform-origin: 50% 0; transition: transform 1050ms cubic-bezier(0.76, 0, 0.24, 1); will-change: transform; }
+.pre-slats i:nth-child(1) { transition-delay: 0ms; } .pre-slats i:nth-child(2) { transition-delay: 55ms; } .pre-slats i:nth-child(3) { transition-delay: 110ms; } .pre-slats i:nth-child(4) { transition-delay: 165ms; }
+.pre-slats i:nth-child(5) { transition-delay: 220ms; } .pre-slats i:nth-child(6) { transition-delay: 275ms; } .pre-slats i:nth-child(7) { transition-delay: 330ms; } .pre-slats i:nth-child(8) { transition-delay: 385ms; }
+.pre-top { position: relative; display: flex; justify-content: space-between; gap: 24px; transition: opacity 400ms var(--ease), transform 600ms var(--ease); }
+.pre-top span:last-child { opacity: 0.7; }
+.pre-num { position: relative; grid-row: 3; display: flex; font-size: min(38vw, 52vh); line-height: 0.84; margin-left: -0.02em; height: 0.84em; overflow: hidden; }
+.pre-num .col { display: block; height: 0.84em; overflow: hidden; }
+.pre-num .strip { display: block; transition: transform 620ms cubic-bezier(0.22, 1, 0.36, 1); will-change: transform; }
+.pre-num b { display: block; font-weight: 400; height: 0.84em; font-variant-numeric: tabular-nums; }
+.pre-num .col:first-child { width: 0; transition: width 500ms var(--ease); }
+.pre-num.hundred .col:first-child { width: 0.42em; }
+.pre-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; }
+.pre-bar i { display: block; height: 100%; background: var(--blue-lit); transform: scaleX(0); transform-origin: 0 50%; will-change: transform; }
+/* leaving: the number rolls up out of its window, the bar fades, then eight slats lift one after another */
+#pre.out .pre-num .col { transition: transform 700ms cubic-bezier(0.76, 0, 0.24, 1); transform: translateY(-104%); }
+#pre.out .pre-num .col:nth-child(2) { transition-delay: 60ms; } #pre.out .pre-num .col:nth-child(3) { transition-delay: 120ms; }
+#pre.out .pre-top { opacity: 0; transform: translateY(-12px); }
+#pre.out .pre-bar { opacity: 0; transition: opacity 400ms var(--ease); }
+#pre.lift .pre-slats i { transform: scaleY(0); }
+#pre.lift { pointer-events: none; }
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 
