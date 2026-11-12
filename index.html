@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Artem Zakharov</title>
+<meta name="description" content="Designed and built by Artem Zakharov.">
+<meta name="theme-color" content="#05060c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+
+<main id="top">
+  <section class="hero" id="hero">
+    <header class="top">
+      <p class="small">Developer. Web systems, bots and interactive presentations.</p>
+      <nav class="small" aria-label="Sections"><a class="ulink" href="#work">Work</a><a class="ulink" href="#about">About</a><a class="ulink" href="#contact">Contact</a></nav>
+    </header>
+    <h1 class="name anton" aria-label="Artem Zakharov">
+      <span class="line" data-t="Artem"></span>
+      <span class="line" data-t="Zakharov"></span>
+    </h1>
+  </section>
+
+  <section class="about" id="about">
+    <p class="statement" id="statement">I build software people use at work every day, and presentations that hold a room. I care about <span data-hl>how it looks</span> and <span data-hl>how it moves</span> as much as about what runs underneath.</p>
+    <div class="cols small">
+      <div class="rv"><h3>What I do</h3><ul><li>Web systems, end to end</li><li>Bots and automation</li><li>Interactive presentations</li><li>Presentation design</li></ul></div>
+      <div class="rv" style="--d:90ms"><h3>What I use</h3><ul><li>Node.js, Express</li><li>PostgreSQL, SQLite</li><li>Python</li><li>React, Three.js, WebGL</li><li>Docker</li></ul></div>
+      <div class="rv" style="--d:180ms"><h3>How I work</h3><p>From an empty folder to a system in use: data model, back end, interface, deployment. One person, the whole path.</p></div>
+    </div>
+  </section>
+
+  <section class="passage" id="passage" aria-hidden="true">
+    <div class="passage-pin">
+      <div class="band anton outline" id="band1"><span>Selected work</span><span>Selected work</span><span>Selected work</span><span>Selected work</span><span>Selected work</span></div>
+      <div class="band anton solid" id="band2"><span>Systems</span><span>Bots</span><span>Decks</span><span>Systems</span><span>Bots</span><span>Decks</span><span>Systems</span><span>Bots</span><span>Decks</span></div>
+      <div class="band anton outline" id="band3"><span>Selected work</span><span>Selected work</span><span>Selected work</span><span>Selected work</span><span>Selected work</span></div>
+    </div>
+  </section>
+
+  <section class="work" id="work">
+    <article class="case c1">
+      <div class="stage3d" data-scene="cards"></div>
+      <div class="head rv">
+        <div><h2 class="anton">MVA Electro</h2><p class="kind small">Service request platform for electrician crews</p></div>
+        <div class="nums small"><div><b class="anton">228</b><span>commits</span></div><div><b class="anton">3</b><span>databases</span></div><div><b class="anton">4</b><span>user roles</span></div></div>
+      </div>
+      <div class="four">
+        <div class="rv"><h4>The task</h4><p>One place where a request is filed, taken, done and closed, and the client can see it the whole way.</p></div>
+        <div class="rv" style="--d:80ms"><h4>My part</h4><p>All of it: data model, API, public site, crew and admin interfaces, deployment.</p></div>
+        <div class="rv" style="--d:160ms"><h4>What I built</h4><p>Crews claim jobs and close them with photos, the sum and the payment method. Managers review. A companion bot in the MAX messenger notifies crews, clients and admins.</p></div>
+        <div class="rv" style="--d:240ms"><h4>Where it stands</h4><p>A complete system with integration tests and a Docker deployment.</p><p class="tags small"><span>Node.js</span><span>Express</span><span>PostgreSQL</span><span>Docker</span></p></div>
+      </div>
+    </article>
+
+    <article class="case c2">
+      <div class="stick rv">
+        <h2 class="anton">Lead Finder</h2>
+        <p class="kind small">Sales tool for media facade advertising</p>
+        <p>A sales team needs a ranked list of who to call, not a directory. This tool builds that list and explains every score.</p>
+        <p class="tags small"><span>Python</span><span>SQLite</span><span>React</span></p>
+      </div>
+      <div class="steps">
+        <div class="stage3d" data-scene="globe"></div>
+        <div class="step rv"><strong>Collect</strong><p>Companies are gathered from open registries, with manual import for everything else.</p></div>
+        <div class="step rv"><strong>Enrich</strong><p>Each company gets its legal details filled in, plus signals from Telegram channels and RSS feeds.</p></div>
+        <div class="step rv"><strong>Score</strong><p>Every lead gets points with a plain explanation, including whether it sits within sight of a facade.</p></div>
+        <div class="step rv"><strong>Work</strong><p>A web interface shows hot leads, a card per company, the funnel, and sliders for the scoring weights.</p></div>
+      </div>
+    </article>
+
+    <article class="case c3">
+      <div class="rv">
+        <h2 class="anton">Psychology Deck</h2>
+        <p class="kind small">Interactive 3D presentation</p>
+        <p>A presentation built as a web app. Shader backgrounds, real depth, and camera moves between nine slides where slide transitions would normally be.</p>
+        <p class="tags small"><span>React</span><span>Three.js</span><span>GLSL</span></p>
+      </div>
+      <div class="stage3d" data-scene="blob"></div>
+    </article>
+  </section>
+
+  <section class="also" id="also">
+    <p class="small">Also made</p>
+    <div class="list">
+      <div class="item small"><strong>The Ad That Pays Back in 30 Days</strong><span>Sales deck for Voyage Media</span><span>14 slides, video</span></div>
+      <div class="item small"><strong>MAX Notification Bot</strong><span>Bot for crews, clients and admins</span><span>Node.js, Docker</span></div>
+      <div class="item small"><strong>Real Life Week</strong><span>Campaign deck on screen time</span><span>13 slides</span></div>
+      <div class="item small"><strong>Household Finance Strategy</strong><span>Data deck: budgets, loans, scenarios</span><span>16 slides</span></div>
+      <div class="item small"><strong>Telegram Bots</strong><span>Assorted bots for chats and everyday tasks</span><span>Node.js, Telegraf</span></div>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <p class="small">Write to me</p>
+    <a class="row" href="https://t.me/porlot" target="_blank" rel="noopener">
+      <span class="big">Telegram</span><span class="handle small">@porlot</span><span class="arrow" aria-hidden="true">&#8599;</span>
+    </a>
+    <a class="row" href="https://github.com/Uhfff" target="_blank" rel="noopener">
+      <span class="big">GitHub</span><span class="handle small">Uhfff</span><span class="arrow" aria-hidden="true">&#8599;</span>
+    </a>
+  </section>
+</main>
+
+<canvas id="gl3" aria-hidden="true"></canvas>
+
+<footer class="small">
+  <span>Designed and built by Artem Zakharov</span>
+  <a class="ulink" href="#top">Back to top</a>
+</footer>
+
+<script src="js/main.js" defer></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module" src="js/scenes.js"></script>
+</body>
+</html>
