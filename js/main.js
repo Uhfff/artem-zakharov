@@ -4,6 +4,9 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const $ = id => document.getElementById(id);
+  document.addEventListener('selectstart', e => e.preventDefault());
+  document.addEventListener('dragstart', e => e.preventDefault());
+
   /* smooth scrolling (Lenis); native scrolling stays if the library is missing */
   const lenis = (!reduce && window.Lenis) ? new window.Lenis({ lerp: 0.09 }) : null;
   document.addEventListener('click', e => {
