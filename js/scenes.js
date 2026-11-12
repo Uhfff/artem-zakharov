@@ -101,7 +101,19 @@ function blob() {
 }
 
 const make = { cards, globe, blob };
-const stages = [...document.querySelectorAll('.stage3d')].map(el => ({ el, vis: 0, ...make[el.dataset.scene]() }));
+const stages = [...document.querySelectorAll('.stage3d')].map(el => ({ el, vis: 0, rx: 0, ry: 0, vx: 0, vy: 0, drag: false, ...make[el.dataset.scene]() }));
+
+/* drag any object to spin it; it keeps turning, then settles */
+stages.forEach(s => {
+  let lx = 0, ly = 0;
+  s.el.addEventListener('pointerdown', e => { s.drag = true; lx = e.clientX; ly = e.clientY; s.el.setPointerCapture(e.pointerId); });
+  s.el.addEventListener('pointermove', e => {
+    if (!s.drag) return;
+    s.vy += (e.clientX - lx) * 0.0016; s.vx += (e.clientY - ly) * 0.0011; lx = e.clientX; ly = e.clientY;
+  });
+  const end = () => { s.drag = false; };
+  s.el.addEventListener('pointerup', end); s.el.addEventListener('pointercancel', end);
+});
 
 let W = 0, H = 0, mx = 0, my = 0, tmx = 0, tmy = 0;
 function resize() { W = innerWidth; H = innerHeight; renderer.setSize(W, H, false); }
@@ -123,6 +135,8 @@ function frame(now) {
     s.cam.position.z = 7.2 * Math.max(1, 0.95 / s.cam.aspect);
     s.cam.updateProjectionMatrix();
     s.update(t, p, reduce ? 0 : mx, reduce ? 0 : my);
+    s.ry += s.vy; s.rx = clamp(s.rx + s.vx, -1.1, 1.1); s.vy *= 0.955; s.vx *= 0.9; if (!s.drag) s.rx *= 0.965;
+    s.g.rotation.y += s.ry; s.g.rotation.x += s.rx;
     s.g.scale.setScalar(reduce ? 1 : 0.55 + 0.45 * ease(s.vis));
     const x = Math.max(0, r.left), y = Math.max(0, H - r.bottom), w = Math.min(W, r.right) - x, h = Math.min(H, H - r.top) - y;
     // the viewport follows the full stage rect so the object does not squash when the stage is partly off screen

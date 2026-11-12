@@ -90,7 +90,8 @@ main, footer { position: relative; z-index: 2; }
 .rv.in { opacity: 1; transform: none; }
 
 /* live 3D objects stand straight on the page: no frame, text may overlap them */
-.stage3d { pointer-events: none; }
+.stage3d { touch-action: pan-y; cursor: grab; }
+.stage3d:active { cursor: grabbing; }
 
 /* case 1: the object fills the screen, the title sits on top of it */
 .c1 .stage3d { height: min(86vh, 860px); margin: 0 calc(var(--gutter) * -1); }
@@ -158,7 +159,25 @@ main, footer { position: relative; z-index: 2; }
 footer { display: flex; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; padding: 26px var(--gutter) max(26px, env(safe-area-inset-bottom)); }
 footer span { opacity: 0.7; }
 
+/* ========== curtain: counts to 100, then lifts ========== */
+#pre { position: fixed; inset: 0; z-index: 50; background: var(--ink); display: flex; align-items: flex-end; padding: 0 var(--gutter) calc(var(--gutter) * 0.4); transition: transform 1000ms cubic-bezier(0.76, 0, 0.24, 1); will-change: transform; }
+#pre span { font-size: min(34vw, 46vh); line-height: 0.82; font-variant-numeric: tabular-nums; }
+#pre.done { transform: translateY(-101%); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+/* ========== cursor companion: a dot that grows into a label over things you can act on ========== */
+#cur { position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--bone); display: grid; place-items: center; opacity: 0; transition: width 450ms var(--ease), height 450ms var(--ease), margin 450ms var(--ease), opacity 300ms var(--ease), background 300ms var(--ease); will-change: transform; }
+#cur.on { opacity: 1; }
+#cur span { font-size: 14px; font-weight: 500; color: var(--ink); opacity: 0; transition: opacity 200ms var(--ease); white-space: nowrap; }
+#cur.big { width: 92px; height: 92px; margin: -46px 0 0 -46px; }
+#cur.big span { opacity: 1; transition-delay: 120ms; }
+#cur.link { width: 44px; height: 44px; margin: -22px 0 0 -22px; background: rgba(127,155,255,0.35); }
+@media (hover: none), (pointer: coarse) { #cur { display: none; } }
+
 @media (prefers-reduced-motion: reduce) {
+  #pre { display: none; }
+  #cur { display: none; }
   .top > *, .row { transition-duration: 1ms !important; transition-delay: 0ms !important; }
   .passage { height: 100vh; }
   .rv { opacity: 1; transform: none; }

@@ -4,7 +4,15 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const $ = id => document.getElementById(id);
-  if (!reduce) document.documentElement.style.scrollBehavior = 'smooth';
+  /* smooth scrolling (Lenis); native scrolling stays if the library is missing */
+  const lenis = (!reduce && window.Lenis) ? new window.Lenis({ lerp: 0.09 }) : null;
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[href^="#"]'); if (!a) return;
+    const target = document.querySelector(a.getAttribute('href')); if (!target) return;
+    e.preventDefault();
+    if (lenis) lenis.scrollTo(target, { duration: 1.6 }); else target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
+  });
+  console.log('%cHi. Looking under the hood? Good.%c\nWrite to me: https://t.me/porlot', 'font: 600 16px system-ui; color: #7f9bff', 'font: 13px system-ui; color: inherit');
 
   /* ---------- hero letters ---------- */
   const chars = [];
@@ -62,7 +70,7 @@
     const vs = 'attribute vec2 p; void main(){ gl_Position = vec4(p, 0.0, 1.0); }';
     const fs = `
 precision highp float;
-uniform vec2 res; uniform float t; uniform vec2 m; uniform float mon; uniform float intro; uniform float sc; uniform float dim;
+uniform vec2 res; uniform float t; uniform vec2 m; uniform float mon; uniform float intro; uniform float sc; uniform float dim; uniform vec3 rip[3];
 float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 float noise(vec2 p){
   vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
@@ -77,6 +85,7 @@ void main(){
   vec2 uv = gl_FragCoord.xy / res;
   float asp = res.x / res.y;
   vec2 p = (uv - 0.5) * vec2(asp, 1.0);
+  vec2 p0 = p;
   vec2 mp = (m - 0.5) * vec2(asp, 1.0);
   vec2 d = p - mp; float dl = length(d);
   float push = exp(-dl * dl * 5.0) * mon;
@@ -87,7 +96,16 @@ void main(){
   vec2 w = vec2(fbm(p + 2.2 * q + vec2(1.7, 9.2) + t * 0.04), fbm(p + 2.2 * q + vec2(8.3, 2.8) - t * 0.035));
   float f = fbm(p + 2.4 * w);
 
-  float ph = f * 30.0 + w.x * 9.0 + push * 3.0;
+  // click ripples travelling through the folds
+  float rw = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float age = t - rip[i].z;
+    if (age > 0.0 && age < 4.5) {
+      float d = length(p0 - (rip[i].xy - 0.5) * vec2(asp, 1.0)) - age * 0.38;
+      rw += sin(d * 42.0) * exp(-age * 1.15) * smoothstep(0.26, 0.0, abs(d));
+    }
+  }
+  float ph = f * 30.0 + w.x * 9.0 + push * 3.0 + rw * 3.2;
   float fold = 0.5 + 0.5 * sin(ph);
   float sheen = pow(fold, 3.0);
   float edge = pow(fold, 28.0);
@@ -104,6 +122,7 @@ void main(){
   col = mix(col, mix(deep * 0.35, lit, sheen * sheen), pool * 0.9);
   col += pearl * edge * (0.22 + 0.50 * depth) * (1.0 - pool * 0.45);
   col += lit * push * 0.14 * (0.4 + fold);
+  col += lit * abs(rw) * 0.22;
 
   float vig = smoothstep(1.30, 0.20, length((uv - 0.5) * vec2(1.0, 1.15)));
   col *= mix(0.55, 1.0, vig);
@@ -120,7 +139,7 @@ void main(){
       gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
       const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       const u = n => gl.getUniformLocation(pr, n);
-      U = { res: u('res'), t: u('t'), m: u('m'), mon: u('mon'), intro: u('intro'), sc: u('sc'), dim: u('dim') };
+      U = { res: u('res'), t: u('t'), m: u('m'), mon: u('mon'), intro: u('intro'), sc: u('sc'), dim: u('dim'), rip: [u('rip[0]'), u('rip[1]'), u('rip[2]')] };
     }
   }
 
@@ -145,9 +164,54 @@ void main(){
   const near = el => { const r = el.getBoundingClientRect(); return r.bottom > -vh * 0.2 && r.top < vh * 1.2; };
 
   /* ---------- loop ---------- */
-  const t0 = performance.now();
+  /* ripples: a click anywhere on empty space sends a wave through the folds */
+  const rips = [[0, 0, -99], [0, 0, -99], [0, 0, -99]]; let ripI = 0, shT = 12;
+  addEventListener('pointerdown', e => {
+    if (reduce || e.target.closest('a, button')) return;
+    rips[ripI] = [e.clientX / innerWidth, 1 - e.clientY / innerHeight, shT]; ripI = (ripI + 1) % 3;
+  }, { passive: true });
+
+  /* cursor companion */
+  const cur = $('cur'), curLabel = cur.firstElementChild, cp = { x: -100, y: -100 };
+  document.addEventListener('pointerover', e => {
+    const big = e.target.closest('[data-cur]'), link = !big && e.target.closest('a, button');
+    cur.classList.toggle('big', !!big); cur.classList.toggle('link', !!link);
+    if (big) curLabel.textContent = big.dataset.cur;
+  });
+
+  /* text scramble on small links */
+  const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  document.querySelectorAll('.ulink').forEach(a => {
+    const txt = a.textContent; let raf = 0;
+    a.addEventListener('pointerenter', () => {
+      if (reduce) return; cancelAnimationFrame(raf); const s0 = performance.now();
+      (function tick(n) {
+        const k = Math.min(1, (n - s0) / 420), keep = Math.floor(k * txt.length);
+        a.textContent = txt.slice(0, keep) + [...txt.slice(keep)].map(c => c === ' ' ? ' ' : GLYPHS[(Math.random() * 26) | 0]).join('');
+        if (k < 1) raf = requestAnimationFrame(tick); else a.textContent = txt;
+      })(s0);
+    });
+  });
+
+  /* curtain */
+  const pre = $('pre'), preN = $('preN'); let started = reduce, fontsOk = false;
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fontsOk = true; }); else fontsOk = true;
+  const preT = performance.now();
+  function curtain(now) {
+    const k = Math.min(1, (now - preT) / 1150), shown = Math.round((1 - Math.pow(1 - k, 2)) * (fontsOk || now - preT > 3000 ? 100 : 92));
+    preN.textContent = shown;
+    if (shown >= 100) { pre.classList.add('done'); setTimeout(() => { started = true; document.body.classList.add('ready'); measure(); }, 380); setTimeout(() => pre.remove(), 1500); return; }
+    requestAnimationFrame(curtain);
+  }
+  if (reduce) { pre.remove(); document.body.classList.add('ready'); } else requestAnimationFrame(curtain);
+
+  let t0 = performance.now();
   let last = t0, slow = 0, sm = scrollY, vel = 0, dim = 1;
   function frame(now) {
+    if (lenis) lenis.raf(now);
+    if (!started) t0 = now;
+    cp.x = lerp(cp.x, ptr.px, 0.22); cp.y = lerp(cp.y, ptr.py, 0.22);
+    cur.style.transform = 'translate3d(' + cp.x.toFixed(1) + 'px,' + cp.y.toFixed(1) + 'px,0)'; cur.classList.toggle('on', ptr.ton === 1);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     const el = now - t0, time = el / 1000, k = 1 - Math.pow(1 - 0.12, dt * 60);
     ptr.x = lerp(ptr.x, ptr.tx, 0.045); ptr.y = lerp(ptr.y, ptr.ty, 0.045); ptr.on = lerp(ptr.on, ptr.ton, 0.04);
@@ -166,6 +230,8 @@ void main(){
       gl.uniform1f(U.intro, Math.min(1, el / 1600));
       gl.uniform1f(U.sc, reduce ? 0 : sm / vh);
       gl.uniform1f(U.dim, dim);
+      shT = reduce ? 12.0 : time + 12.0;
+      for (let i = 0; i < 3; i++) gl.uniform3f(U.rip[i], rips[i][0], rips[i][1], rips[i][2]);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       if (dt > 0.034 && el > 1500 && scale > 0.5) { if (++slow > 40) { slow = 0; scale *= 0.8; canvas.width = Math.round(vw * scale); canvas.height = Math.round(vh * scale); gl.viewport(0, 0, canvas.width, canvas.height); } }
     }
@@ -209,6 +275,5 @@ void main(){
   }
 
   resize();
-  setTimeout(() => document.body.classList.add('ready'), 40);
   requestAnimationFrame(frame);
 })();
